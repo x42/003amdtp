@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012 Robin Gareus <robin@gareus.org>
+ * Copyright (C) 2012 Damien Zammit <damien.zammit@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,16 +30,27 @@
  *
  * @param idx index byte (audio-sample data) 0x00..0xff
  * @param off channel offset shift
- * @return value to xor with given data
+ * @return salt to XOR with given data
  * */
 const uint8_t digiscrt(const uint8_t idx, const int off) {
-	/* todo simplify futher: just use bitmasks and << */
+	/* TODO simplify further: just use bit-masks and shift operators
+	 * should be possible somehow :)
+	 * */
+
+	/** the length of the added pattern only depends on the lower nibble
+	 * of the last non-zero data */
 	const uint8_t len[16] = {0, 1, 3, 5, 7, 9, 11, 13, 14, 12, 10, 8, 6, 4, 2, 0};
 
+	/** the lower nibble of the salt. Interleaved sequence.
+	 * this is walked backwards according to len[] */
 	const uint8_t nib[15] = {0x8, 0x7, 0x9, 0x6, 0xa, 0x5, 0xb, 0x4, 0xc, 0x3, 0xd, 0x2, 0xe, 0x1, 0xf};
+
+	/** circular list for upper nibble. */
 	const uint8_t hir[15] = {0x0, 0x6, 0xf, 0x8, 0x7, 0x5, 0x3, 0x4, 0xc, 0xd, 0xe, 0x1, 0x2, 0xb, 0xa};
+	/** start offset for upper nibble mapping */
 	const uint8_t hio[16] = {0, 11, 12, 6, 7, 5, 1, 4, 3, 0x00, 14, 13, 8, 9, 10, 2};
 
+	/* the first byte is identical to itself */
 	if (off==0) return idx;
 
 	const uint8_t ln = idx&0xf;
