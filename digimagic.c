@@ -19,7 +19,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
+
+#include "digimagic.h"
 
 #define BYTE_PER_SAMPLE (4)
 #define MAGIC_DIGI_BYTE (1)
@@ -32,7 +33,7 @@
  * @param off channel offset shift
  * @return salt to XOR with given data
  * */
-const uint8_t digiscrt(const uint8_t idx, const int off) {
+static const uint8_t digiscrt(const uint8_t idx, const int off) {
 	/* TODO simplify further: just use bit-masks and shift operators
 	 * should be possible somehow :)
 	 * */
@@ -63,17 +64,6 @@ const uint8_t digiscrt(const uint8_t idx, const int off) {
 }
 
 
-/** prepare raw audio data for sending to digi003
- *
- * This function takes a pointer to interleaved audio data. Each sample must
- * be BYTE_PER_SAMPLE bytes long and there must be nch samples.
- *
- * It rewrites the byte MAGIC_DIGI_BYTE of each sample according to
- * digidesign003(TM) magic(TM).
- *
- * @param data interleaved audio-data to be rewritten in place
- * @param nch number of channels per frame
- */
 void digi_encode(uint8_t * const data, const int nch) {
 	int c;
 	uint8_t carry = 0x00;
@@ -88,13 +78,6 @@ void digi_encode(uint8_t * const data, const int nch) {
 	}
 }
 
-/** decode audio data received from a digi003
- *
- * see \ref digi_encode for details
- *
- * @param data interleaved audio-data to be rewritten in place
- * @param nch number of channels per frame
- */
 void digi_decode(uint8_t * const data, const int nch) {
 	int c;
 	uint8_t carry = 0x00;
@@ -113,7 +96,7 @@ void digi_decode(uint8_t * const data, const int nch) {
 
 #ifdef TEST_MAIN
 
-void hexdump(uint8_t *data, int nch, char *annotation) {
+static void hexdump(uint8_t *data, int nch, char *annotation) {
 	int c;
 	printf("%10s: ", annotation);
 	for (c=0; c< nch; ++c) {
