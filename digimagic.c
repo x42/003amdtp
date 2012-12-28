@@ -51,13 +51,15 @@ const uint8_t digiscrt(const uint8_t idx, const int off) {
 }
 
 
-/** This function takes a pointer to interleaved audio data. Each sample must
+/** prepare raw audio data for sending to digi003
+ *
+ * This function takes a pointer to interleaved audio data. Each sample must
  * be BYTE_PER_SAMPLE bytes long and there must be nch samples.
  *
  * It rewrites the byte MAGIC_DIGI_BYTE of each sample according to
  * digidesign003(TM) magic(TM).
  *
- * @param data interleaved audio-data to be rewritten
+ * @param data interleaved audio-data to be rewritten in place
  * @param nch number of channels per frame
  */
 void digi_encode(uint8_t * const data, const int nch) {
@@ -70,6 +72,28 @@ void digi_encode(uint8_t * const data, const int nch) {
 		if (data[MAGIC_BYTE_OFF(c)] != 0x00) { off = 0; }
 		data[MAGIC_BYTE_OFF(c)] ^= carry;
 		if (off == 0) { idx = data[MAGIC_BYTE_OFF(c)]; }
+		carry=digiscrt(idx, ++off);
+	}
+}
+
+/** decode audio data received from a digi003
+ *
+ * see \ref digi_encode for details
+ *
+ * @param data interleaved audio-data to be rewritten in place
+ * @param nch number of channels per frame
+ */
+void digi_decode(uint8_t * const data, const int nch) {
+	int c;
+	uint8_t carry = 0x00;
+	uint8_t idx = 0;
+	int off = 0;
+
+	for (c=0; c< nch; ++c) {
+		data[MAGIC_BYTE_OFF(c)] ^= carry;
+		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
+			off = 0; idx= data[MAGIC_BYTE_OFF(c)] ^ carry;
+		}
 		carry=digiscrt(idx, ++off);
 	}
 }
@@ -138,6 +162,16 @@ int main(int argc, char **argv) {
 	digi_encode(snd, nch);
 	hexdump(snd, nch, "output");
 	printf("    expect: 05 6b f4 8c 73 5d 37 49 c6 da e5 1b 24 bc a3 0d 62 fe\n");
+
+	printf("\n");
+	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
+	snd[MAGIC_DIGI_BYTE]=snd[6*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0x05;
+	hexdump(snd, nch, "input");
+	digi_encode(snd, nch);
+	hexdump(snd, nch, "encoded");
+	digi_decode(snd, nch);
+	hexdump(snd, nch, "output");
+	printf("    expect: 05 00 00 00 00 00 05 00 00 00 00 00 00 00 00 00 00 00\n");
 
 	free(snd);
 	return 0;
