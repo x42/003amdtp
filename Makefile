@@ -1,4 +1,5 @@
-CFLAGS?=-Wall
+CFLAGS?=-Wall -O3
+CFLAGS+=-DTEST_MAIN
 
 digimagic: digimagic.c
 
