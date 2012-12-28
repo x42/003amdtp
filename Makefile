@@ -1,3 +1,5 @@
+CFLAGS?=-Wall
+
 digimagic: digimagic.c
 
 clean:
