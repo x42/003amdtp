@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2012 Robin Gareus <robin@gareus.org>
- * Copyright (C) 2012 Damien Zammit <damien.zammit@gmail.com>
+ * Copyright (C) 2012 Damien Zammit <damien@zamaudio.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
