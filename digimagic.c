@@ -33,41 +33,41 @@
  * @param off channel offset shift
  * @return salt to XOR with given data
  * */
-static const uint8_t digiscrt(const uint8_t idx, const int off) {
+static const __u8 digiscrt(const __u8 idx, const int off) {
 	/* TODO simplify further: just use bit-masks and shift operators
 	 * should be possible somehow :)
 	 * */
 
 	/** the length of the added pattern only depends on the lower nibble
 	 * of the last non-zero data */
-	const uint8_t len[16] = {0, 1, 3, 5, 7, 9, 11, 13, 14, 12, 10, 8, 6, 4, 2, 0};
+	const __u8 len[16] = {0, 1, 3, 5, 7, 9, 11, 13, 14, 12, 10, 8, 6, 4, 2, 0};
 
 	/** the lower nibble of the salt. Interleaved sequence.
 	 * this is walked backwards according to len[] */
-	const uint8_t nib[15] = {0x8, 0x7, 0x9, 0x6, 0xa, 0x5, 0xb, 0x4, 0xc, 0x3, 0xd, 0x2, 0xe, 0x1, 0xf};
+	const __u8 nib[15] = {0x8, 0x7, 0x9, 0x6, 0xa, 0x5, 0xb, 0x4, 0xc, 0x3, 0xd, 0x2, 0xe, 0x1, 0xf};
 
 	/** circular list for upper nibble. */
-	const uint8_t hir[15] = {0x0, 0x6, 0xf, 0x8, 0x7, 0x5, 0x3, 0x4, 0xc, 0xd, 0xe, 0x1, 0x2, 0xb, 0xa};
+	const __u8 hir[15] = {0x0, 0x6, 0xf, 0x8, 0x7, 0x5, 0x3, 0x4, 0xc, 0xd, 0xe, 0x1, 0x2, 0xb, 0xa};
 	/** start offset for upper nibble mapping */
-	const uint8_t hio[16] = {0, 11, 12, 6, 7, 5, 1, 4, 3, 0x00, 14, 13, 8, 9, 10, 2};
+	const __u8 hio[16] = {0, 11, 12, 6, 7, 5, 1, 4, 3, 0x00, 14, 13, 8, 9, 10, 2};
 
 	/* the first byte is identical to itself */
 	if (off==0) return idx;
 
-	const uint8_t ln = idx&0xf;
+	const __u8 ln = idx&0xf;
 	if (len[ln] < off) return 0x00;
 
-	const uint8_t hn = (idx>>4)&0xf;
-	const uint8_t hr = (hn==0x9) ? 0x9 : hir[(hio[hn]+off)%15];
+	const __u8 hn = (idx>>4)&0xf;
+	const __u8 hr = (hn==0x9) ? 0x9 : hir[(hio[hn]+off)%15];
 
 	return (nib[14 - len[ln] + off]) | (hr<<4);
 }
 
 
-void digi_encode(uint8_t * const data, const int nch) {
+void digi_encode(__u8 * const data, const int nch) {
 	int c;
-	uint8_t carry = 0x00;
-	uint8_t idx = 0;
+	__u8 carry = 0x00;
+	__u8 idx = 0;
 	int off = 0;
 
 	for (c=0; c< nch; ++c) {
@@ -78,10 +78,10 @@ void digi_encode(uint8_t * const data, const int nch) {
 	}
 }
 
-void digi_decode(uint8_t * const data, const int nch) {
+void digi_decode(__u8 * const data, const int nch) {
 	int c;
-	uint8_t carry = 0x00;
-	uint8_t idx = 0;
+	__u8 carry = 0x00;
+	__u8 idx = 0;
 	int off = 0;
 
 	for (c=0; c< nch; ++c) {
@@ -96,7 +96,7 @@ void digi_decode(uint8_t * const data, const int nch) {
 
 #ifdef TEST_MAIN
 
-static void hexdump(uint8_t *data, int nch, char *annotation) {
+static void hexdump(__u8 *data, int nch, char *annotation) {
 	int c;
 	printf("%10s: ", annotation);
 	for (c=0; c< nch; ++c) {
@@ -108,18 +108,18 @@ static void hexdump(uint8_t *data, int nch, char *annotation) {
 
 int main(int argc, char **argv) {
 	const int nch = 18;
-	uint8_t *snd = calloc(BYTE_PER_SAMPLE * nch, sizeof(uint8_t));
+	__u8 *snd = calloc(BYTE_PER_SAMPLE * nch, sizeof(__u8));
 
 	printf("# of channels: %d\n", 18);
 
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
+	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
 	hexdump(snd, nch, "output");
 	printf("    expect: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n");
 
 	printf("\n");
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
+	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
 	snd[MAGIC_DIGI_BYTE]=snd[4*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0x14;
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
 	printf("    expect: 14 2c b3 ad 16 2a b5 ab 04 6c f3 8d 72 5e 31 4f 00 00\n");
 
 	printf("\n");
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
+	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
 	snd[MAGIC_DIGI_BYTE]=snd[4*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0x85;
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
 	printf("    expect: 85 7b 54 3c c6 da e5 1b 24 bc a3 0d 62 fe 81 7f 00 00\n");
 
 	printf("\n");
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
+	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
 	snd[MAGIC_DIGI_BYTE]=snd[6*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0x49;
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
 	printf("    expect: 49 c6 da e5 1b 24 f5 8b 74 5c 33 4d c2 de e1 1f 00 00\n");
 
 	printf("\n");
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
+	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
 	snd[MAGIC_DIGI_BYTE]=snd[6*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0xfd;
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
 	printf("    expect: fd 82 7e 51 3f 00 fd 82 7e 51 3f 00 00 00 00 00 00 00\n");
 
 	printf("\n");
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
+	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
 	snd[MAGIC_DIGI_BYTE]=snd[6*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0x05;
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
 	printf("    expect: 05 6b f4 8c 73 5d 37 49 c6 da e5 1b 24 bc a3 0d 62 fe\n");
 
 	printf("\n");
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
+	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
 	snd[MAGIC_DIGI_BYTE]=snd[6*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0x05;
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
