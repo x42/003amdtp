@@ -16,10 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "digimagic.h"
 
 #define BYTE_PER_SAMPLE (4)
@@ -95,6 +91,10 @@ void digi_decode(__u8 * const data, const int nch) {
 
 
 #ifdef TEST_MAIN
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 static void hexdump(__u8 *data, int nch, char *annotation) {
 	int c;
