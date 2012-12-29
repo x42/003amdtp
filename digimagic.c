@@ -23,7 +23,7 @@
 #include "digimagic.h"
 
 #define BYTE_PER_SAMPLE (4)
-#define MAGIC_DIGI_BYTE (1)
+#define MAGIC_DIGI_BYTE (2)
 
 #define MAGIC_BYTE_OFF(x) ( (x * BYTE_PER_SAMPLE) + MAGIC_DIGI_BYTE )
 
