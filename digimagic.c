@@ -52,8 +52,9 @@ static const __u8 digiscrt(const __u8 idx, const int off) {
 	 */
 	const __u8 hio[16] = {0, 11, 12, 6, 7, 5, 1, 4, 3, 0x00, 14, 13, 8, 9, 10, 2};
 
-	/* the first byte is identical to itself */
-	if (off==0) return idx;
+#if 0 /* the current algorithm never calls digiscrt(.., 0) -- optimize away */
+	if (off==0) return idx; /* the first byte is identical to itself */
+#endif
 
 	const __u8 ln = idx&0xf;
 	if (len[ln] < off) return 0x00;
@@ -68,13 +69,15 @@ static const __u8 digiscrt(const __u8 idx, const int off) {
 void digi_encode(__u8 * const data, const int nch) {
 	int c;
 	__u8 carry = 0x00;
-	__u8 idx = 0;
+	__u8 idx = 0x00;
 	int off = 0;
 
 	for (c=0; c< nch; ++c) {
-		if (data[MAGIC_BYTE_OFF(c)] != 0x00) { off = 0; }
+		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
+			off = 0;
+			idx = data[MAGIC_BYTE_OFF(c)] ^ carry;
+		}
 		data[MAGIC_BYTE_OFF(c)] ^= carry;
-		if (off == 0) { idx = data[MAGIC_BYTE_OFF(c)]; }
 		carry=digiscrt(idx, ++off);
 	}
 }
@@ -82,14 +85,16 @@ void digi_encode(__u8 * const data, const int nch) {
 void digi_encode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
 	int c;
 	__u8 carry = 0x00;
-	__u8 idx = 0;
+	__u8 idx = 0x00;
 	int off = 0;
 	__u8 * const data = ( (__u8*) buffer);
 
 	for (c=0; c< nch; ++c) {
-		if (data[MAGIC_BYTE_OFF(pcm_quadlets[c])] != 0x00) { off = 0; }
+		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
+			off = 0;
+			idx = data[MAGIC_BYTE_OFF(c)] ^ carry;
+		}
 		data[MAGIC_BYTE_OFF(pcm_quadlets[c])] ^= carry;
-		if (off == 0) { idx = data[MAGIC_BYTE_OFF(pcm_quadlets[c])]; }
 		carry=digiscrt(idx, ++off);
 	}
 }
@@ -97,13 +102,14 @@ void digi_encode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) 
 void digi_decode(__u8 * const data, const int nch) {
 	int c;
 	__u8 carry = 0x00;
-	__u8 idx = 0;
+	__u8 idx = 0x00;
 	int off = 0;
 
 	for (c=0; c< nch; ++c) {
 		data[MAGIC_BYTE_OFF(c)] ^= carry;
 		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
-			off = 0; idx= data[MAGIC_BYTE_OFF(c)] ^ carry;
+			off = 0;
+			idx= data[MAGIC_BYTE_OFF(c)] ^ carry;
 		}
 		carry=digiscrt(idx, ++off);
 	}
@@ -112,14 +118,15 @@ void digi_decode(__u8 * const data, const int nch) {
 void digi_decode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
 	int c;
 	__u8 carry = 0x00;
-	__u8 idx = 0;
+	__u8 idx = 0x00;
 	int off = 0;
 	__u8 * const data = ( (__u8*) buffer);
 
 	for (c=0; c< nch; ++c) {
 		data[MAGIC_BYTE_OFF(pcm_quadlets[c])] ^= carry;
 		if (data[MAGIC_BYTE_OFF(pcm_quadlets[c])] != 0x00) {
-			off = 0; idx= data[MAGIC_BYTE_OFF(pcm_quadlets[c])] ^ carry;
+			off = 0;
+			idx= data[MAGIC_BYTE_OFF(pcm_quadlets[c])] ^ carry;
 		}
 		carry=digiscrt(idx, ++off);
 	}
