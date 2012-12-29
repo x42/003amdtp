@@ -18,7 +18,7 @@
 #ifndef DIGIMAGIC_H
 #define DIGIMAGIC_H
 
-#include <stdint.h>
+#include <linux/types.h>
 
 /** prepare raw audio data for sending to digi003
  *
@@ -31,7 +31,12 @@
  * @param data interleaved audio-data to be rewritten in place
  * @param nch number of channels per frame
  */
-void digi_encode(uint8_t * const data, const int nch);
+void digi_encode(__be32 * const data, const int nch);
+
+/**
+ * test function -- detect byte
+ */
+void digi_encode_dummy(__be32 * const data, const int nch);
 
 /** decode audio data received from a digi003
  *
@@ -40,6 +45,6 @@ void digi_encode(uint8_t * const data, const int nch);
  * @param data interleaved audio-data to be rewritten in place
  * @param nch number of channels per frame
  */
-void digi_decode(uint8_t * const data, const int nch);
+void digi_decode(__be32 * const data, const int nch);
 #endif
 

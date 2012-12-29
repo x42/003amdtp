@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "digimagic.h"
 
@@ -64,30 +65,37 @@ static const uint8_t digiscrt(const uint8_t idx, const int off) {
 }
 
 
-void digi_encode(uint8_t * const data, const int nch) {
+void digi_encode(__be32 * const data, const int nch) {
 	int c;
 	uint8_t carry = 0x00;
 	uint8_t idx = 0;
 	int off = 0;
 
 	for (c=0; c< nch; ++c) {
-		if (data[MAGIC_BYTE_OFF(c)] != 0x00) { off = 0; }
-		data[MAGIC_BYTE_OFF(c)] ^= carry;
-		if (off == 0) { idx = data[MAGIC_BYTE_OFF(c)]; }
+		if ( ((data[c]>>8)&0xff) != 0x00) { off = 0; }
+		data[c] ^= carry<<8;
+		if (off == 0) { idx = (data[c]>>8)&0xff; }
 		carry=digiscrt(idx, ++off);
 	}
 }
 
-void digi_decode(uint8_t * const data, const int nch) {
+void digi_encode_dummy(__be32 * const data, const int nch) {
+	int c;
+	for (c=0; c< nch; ++c) {
+		data[c] &= 0xffff00ff;
+	}
+}
+
+void digi_decode(__be32 * const data, const int nch) {
 	int c;
 	uint8_t carry = 0x00;
 	uint8_t idx = 0;
 	int off = 0;
 
 	for (c=0; c< nch; ++c) {
-		data[MAGIC_BYTE_OFF(c)] ^= carry;
-		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
-			off = 0; idx= data[MAGIC_BYTE_OFF(c)] ^ carry;
+		data[c] ^= carry<<8;
+		if ((data[c]&0x0000ff00) != 0x00) {
+			off = 0; idx= ((data[c]>>8)&0xff) ^ carry;
 		}
 		carry=digiscrt(idx, ++off);
 	}
@@ -96,11 +104,11 @@ void digi_decode(uint8_t * const data, const int nch) {
 
 #ifdef TEST_MAIN
 
-static void hexdump(uint8_t *data, int nch, char *annotation) {
+static void hexdump(__be32 *data, int nch, char *annotation) {
 	int c;
 	printf("%10s: ", annotation);
 	for (c=0; c< nch; ++c) {
-		printf("%02x ", data[MAGIC_BYTE_OFF(c)]);
+		printf("%02x ", (data[c]>>8)&0xff);
 	}
 	printf("\n");
 }
@@ -108,59 +116,59 @@ static void hexdump(uint8_t *data, int nch, char *annotation) {
 
 int main(int argc, char **argv) {
 	const int nch = 18;
-	uint8_t *snd = calloc(BYTE_PER_SAMPLE * nch, sizeof(uint8_t));
+	__be32 *snd = calloc(nch, sizeof(__be32));
 
 	printf("# of channels: %d\n", 18);
 
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
+	memset(snd, 0, nch * sizeof(__be32));
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
 	hexdump(snd, nch, "output");
 	printf("    expect: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n");
 
 	printf("\n");
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
-	snd[MAGIC_DIGI_BYTE]=snd[4*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0x14;
+	memset(snd, 0, nch * sizeof(__be32));
+	snd[0]=snd[4] = 0x00001400;
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
 	hexdump(snd, nch, "output");
 	printf("    expect: 14 2c b3 ad 16 2a b5 ab 04 6c f3 8d 72 5e 31 4f 00 00\n");
 
 	printf("\n");
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
-	snd[MAGIC_DIGI_BYTE]=snd[4*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0x85;
+	memset(snd, 0, nch * sizeof(__be32));
+	snd[0]=snd[4] = 0x00008500;
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
 	hexdump(snd, nch, "output");
 	printf("    expect: 85 7b 54 3c c6 da e5 1b 24 bc a3 0d 62 fe 81 7f 00 00\n");
 
 	printf("\n");
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
-	snd[MAGIC_DIGI_BYTE]=snd[6*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0x49;
+	memset(snd, 0, nch * sizeof(__be32));
+	snd[0]=snd[6] = 0x00004900;
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
 	hexdump(snd, nch, "output");
 	printf("    expect: 49 c6 da e5 1b 24 f5 8b 74 5c 33 4d c2 de e1 1f 00 00\n");
 
 	printf("\n");
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
-	snd[MAGIC_DIGI_BYTE]=snd[6*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0xfd;
+	memset(snd, 0, nch * sizeof(__be32));
+	snd[0]=snd[6] = 0x0000fd00;
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
 	hexdump(snd, nch, "output");
 	printf("    expect: fd 82 7e 51 3f 00 fd 82 7e 51 3f 00 00 00 00 00 00 00\n");
 
 	printf("\n");
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
-	snd[MAGIC_DIGI_BYTE]=snd[6*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0x05;
+	memset(snd, 0, nch * sizeof(__be32));
+	snd[0]=snd[6] = 0x00000500;
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
 	hexdump(snd, nch, "output");
 	printf("    expect: 05 6b f4 8c 73 5d 37 49 c6 da e5 1b 24 bc a3 0d 62 fe\n");
 
 	printf("\n");
-	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(uint8_t));
-	snd[MAGIC_DIGI_BYTE]=snd[6*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0x05;
+	memset(snd, 0, nch * sizeof(__be32));
+	snd[0]=snd[6] = 0x00000500;
 	hexdump(snd, nch, "input");
 	digi_encode(snd, nch);
 	hexdump(snd, nch, "encoded");
