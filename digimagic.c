@@ -29,11 +29,7 @@
  * @param off channel offset shift
  * @return salt to XOR with given data
  * */
-static const __u8 digiscrt(const __u8 idx, const int off) {
-	/* TODO simplify further: just use bit-masks and shift operators
-	 * should be possible somehow :)
-	 */
-
+static const __u8 digiscrt(const __u8 idx, const unsigned int off) {
 	/** the length of the added pattern only depends on the lower nibble
 	 * of the last non-zero data */
 	const __u8 len[16] = {0, 1, 3, 5, 7, 9, 11, 13, 14, 12, 10, 8, 6, 4, 2, 0};
@@ -62,72 +58,87 @@ static const __u8 digiscrt(const __u8 idx, const int off) {
 	const __u8 hn = (idx>>4)&0xf;
 	const __u8 hr = (hn==0x9) ? 0x9 : hir[(hio[hn]+off)%15];
 
-	return (nib[14 - len[ln] + off]) | (hr<<4);
+	return (nib[14 + off - len[ln]]) | (hr<<4);
 }
 
+
+/*  ----- SIMPLE API ----- */
 
 void digi_encode(__u8 * const data, const int nch) {
 	int c;
-	__u8 carry = 0x00;
-	__u8 idx = 0x00;
-	int off = 0;
+	DigiMagic state = {0x00, 0x00, 0};
 
 	for (c=0; c< nch; ++c) {
 		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
-			off = 0;
-			idx = data[MAGIC_BYTE_OFF(c)] ^ carry;
+			state.off = 0;
+			state.idx = data[MAGIC_BYTE_OFF(c)] ^ state.carry;
 		}
-		data[MAGIC_BYTE_OFF(c)] ^= carry;
-		carry=digiscrt(idx, ++off);
-	}
-}
-
-void digi_encode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
-	int c;
-	__u8 carry = 0x00;
-	__u8 idx = 0x00;
-	int off = 0;
-	__u8 * const data = ( (__u8*) buffer);
-
-	for (c=0; c< nch; ++c) {
-		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
-			off = 0;
-			idx = data[MAGIC_BYTE_OFF(c)] ^ carry;
-		}
-		data[MAGIC_BYTE_OFF(pcm_quadlets[c])] ^= carry;
-		carry=digiscrt(idx, ++off);
+		data[MAGIC_BYTE_OFF(c)] ^= state.carry;
+		state.carry=digiscrt(state.idx, ++(state.off));
 	}
 }
 
 void digi_decode(__u8 * const data, const int nch) {
 	int c;
-	__u8 carry = 0x00;
-	__u8 idx = 0x00;
-	int off = 0;
+	DigiMagic state = {0x00, 0x00, 0};
 
 	for (c=0; c< nch; ++c) {
-		data[MAGIC_BYTE_OFF(c)] ^= carry;
+		data[MAGIC_BYTE_OFF(c)] ^= state.carry;
 		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
-			off = 0;
-			idx= data[MAGIC_BYTE_OFF(c)] ^ carry;
+			state.off = 0;
+			state.idx= data[MAGIC_BYTE_OFF(c)] ^ state.carry;
 		}
-		carry=digiscrt(idx, ++off);
+		state.carry=digiscrt(state.idx, ++(state.off));
 	}
+}
+
+/*  ----- Iterative call API ----- */
+
+void digi_state_reset(DigiMagic *state) {
+	state->carry=0x00;
+	state->idx=0x00;
+	state->off=0;
+}
+
+void digi_encode_step(DigiMagic *state, __be32 * const buffer) {
+	__u8 * const data = (__u8*) buffer;
+
+	if (data[MAGIC_DIGI_BYTE] != 0x00) {
+		state->off = 0;
+		state->idx = data[MAGIC_DIGI_BYTE] ^ state->carry;
+	}
+	data[MAGIC_DIGI_BYTE] ^= state->carry;
+	state->carry=digiscrt(state->idx, ++(state->off));
+}
+
+void digi_encode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
+	int c;
+	DigiMagic state;
+	digi_state_reset(&state);
+
+	for (c=0; c< nch; ++c) {
+		digi_encode_step(&state, &buffer[pcm_quadlets[c]]);
+	}
+}
+
+
+void digi_decode_step(DigiMagic *state, __be32 * const buffer) {
+	__u8 * const data = (__u8*) buffer;
+
+	data[MAGIC_DIGI_BYTE] ^= state->carry;
+	if (data[MAGIC_DIGI_BYTE] != 0x00) {
+		state->off = 0;
+		state->idx= data[MAGIC_DIGI_BYTE] ^ state->carry;
+	}
+	state->carry=digiscrt(state->idx, ++(state->off));
 }
 
 void digi_decode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
 	int c;
-	__u8 carry = 0x00;
-	__u8 idx = 0x00;
-	int off = 0;
-	__u8 * const data = ( (__u8*) buffer);
+	DigiMagic state;
+	digi_state_reset(&state);
 
 	for (c=0; c< nch; ++c) {
-		data[MAGIC_BYTE_OFF(pcm_quadlets[c])] ^= carry;
-		if (data[MAGIC_BYTE_OFF(pcm_quadlets[c])] != 0x00) {
-			off = 0;
-			idx= data[MAGIC_BYTE_OFF(pcm_quadlets[c])] ^ carry;
-		}
-		carry=digiscrt(idx, ++off);
+		digi_decode_step(&state, &buffer[pcm_quadlets[c]]);
 	}
 }

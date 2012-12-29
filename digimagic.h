@@ -15,10 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef DIGIMAGIC_H
-#define DIGIMAGIC_H
+#ifndef DIGIMAGIC_H_INCLUDED
+#define DIGIMAGIC_H_INCLUDED
 
 #include <linux/types.h>
+
+struct DigiMagic {
+	__u8 carry;
+	__u8 idx;
+	unsigned int off;
+};
+
+typedef struct DigiMagic DigiMagic;
 
 /** prepare raw audio data for sending to digi003
  *
@@ -61,6 +69,18 @@ void digi_decode(__u8 * const data, const int nch);
  * @param nch number of channels per frame
  */
 void digi_decode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch);
+
+/**
+ */
+void digi_state_reset(DigiMagic *state);
+
+/**
+ */
+void digi_encode_step(DigiMagic *state, __be32 * const buffer);
+
+/**
+ */
+void digi_decode_step(DigiMagic *state, __be32 * const buffer);
 
 #endif
 
