@@ -1,2 +1,4 @@
 digimagic
 *.swp
+tags
+cscope.*
