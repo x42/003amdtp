@@ -74,6 +74,21 @@ void digi_encode(__u8 * const data, const int nch) {
 	}
 }
 
+void digi_encode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
+	int c;
+	__u8 carry = 0x00;
+	__u8 idx = 0;
+	int off = 0;
+	__u8 * const data = ( (__u8*) buffer);
+
+	for (c=0; c< nch; ++c) {
+		if (data[MAGIC_BYTE_OFF(pcm_quadlets[c])] != 0x00) { off = 0; }
+		data[MAGIC_BYTE_OFF(pcm_quadlets[c])] ^= carry;
+		if (off == 0) { idx = data[MAGIC_BYTE_OFF(pcm_quadlets[c])]; }
+		carry=digiscrt(idx, ++off);
+	}
+}
+
 void digi_decode(__u8 * const data, const int nch) {
 	int c;
 	__u8 carry = 0x00;
@@ -84,6 +99,22 @@ void digi_decode(__u8 * const data, const int nch) {
 		data[MAGIC_BYTE_OFF(c)] ^= carry;
 		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
 			off = 0; idx= data[MAGIC_BYTE_OFF(c)] ^ carry;
+		}
+		carry=digiscrt(idx, ++off);
+	}
+}
+
+void digi_decode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
+	int c;
+	__u8 carry = 0x00;
+	__u8 idx = 0;
+	int off = 0;
+	__u8 * const data = ( (__u8*) buffer);
+
+	for (c=0; c< nch; ++c) {
+		data[MAGIC_BYTE_OFF(pcm_quadlets[c])] ^= carry;
+		if (data[MAGIC_BYTE_OFF(pcm_quadlets[c])] != 0x00) {
+			off = 0; idx= data[MAGIC_BYTE_OFF(pcm_quadlets[c])] ^ carry;
 		}
 		carry=digiscrt(idx, ++off);
 	}
@@ -107,8 +138,12 @@ static void hexdump(__u8 *data, int nch, char *annotation) {
 
 
 int main(int argc, char **argv) {
+	int i;
 	const int nch = 18;
 	__u8 *snd = calloc(BYTE_PER_SAMPLE * nch, sizeof(__u8));
+
+	__u8 *pcm_quadlets = calloc(nch, sizeof(__u8));
+	for (i=0; i<nch; ++i) pcm_quadlets[i]=i;
 
 	printf("# of channels: %d\n", 18);
 
@@ -130,7 +165,7 @@ int main(int argc, char **argv) {
 	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
 	snd[MAGIC_DIGI_BYTE]=snd[4*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0x85;
 	hexdump(snd, nch, "input");
-	digi_encode(snd, nch);
+	digi_encode_qmap((__be32*)snd, pcm_quadlets, nch);
 	hexdump(snd, nch, "output");
 	printf("    expect: 85 7b 54 3c c6 da e5 1b 24 bc a3 0d 62 fe 81 7f 00 00\n");
 
@@ -165,10 +200,21 @@ int main(int argc, char **argv) {
 	digi_encode(snd, nch);
 	hexdump(snd, nch, "encoded");
 	digi_decode(snd, nch);
-	hexdump(snd, nch, "output");
+	hexdump(snd, nch, "decoded");
 	printf("    expect: 05 00 00 00 00 00 05 00 00 00 00 00 00 00 00 00 00 00\n");
 
+	printf("\n");
+	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
+	snd[MAGIC_DIGI_BYTE]=snd[9*BYTE_PER_SAMPLE + MAGIC_DIGI_BYTE] = 0xf9;
+	hexdump(snd, nch, "input");
+	digi_encode_qmap((__be32*)snd, pcm_quadlets, nch);
+	hexdump(snd, nch, "encoded");
+	digi_decode_qmap((__be32*)snd, pcm_quadlets, nch);
+	hexdump(snd, nch, "decoded");
+	printf("    expect: f9 00 00 00 00 00 00 00 00 f9 00 00 00 00 00 00 00 00\n");
+
 	free(snd);
+	free(pcm_quadlets);
 	return 0;
 }
 #endif
