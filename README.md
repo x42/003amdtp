@@ -23,7 +23,7 @@ unknown if the same mechanism is used for other Digidesign devices.
 
 Excerpt from `sound/firewire/amdtp.c`:
 
-<pre>
+<pre><code>
 static void amdtp_write_samples(struct amdtp_stream *s,
 				struct snd_pcm_substream *pcm,
 				__be32 *buffer, unsigned int frames)
@@ -52,6 +52,6 @@ static void amdtp_write_samples(struct amdtp_stream *s,
 			src = (void *)runtime->dma_area;
 	}
 }
-</pre>
+</code></pre>
 
 003amdtp is licensed in terms of the GNU General Public License Version 2 or later.
