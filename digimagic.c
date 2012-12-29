@@ -32,7 +32,7 @@
 static const __u8 digiscrt(const __u8 idx, const int off) {
 	/* TODO simplify further: just use bit-masks and shift operators
 	 * should be possible somehow :)
-	 * */
+	 */
 
 	/** the length of the added pattern only depends on the lower nibble
 	 * of the last non-zero data */
@@ -42,9 +42,14 @@ static const __u8 digiscrt(const __u8 idx, const int off) {
 	 * this is walked backwards according to len[] */
 	const __u8 nib[15] = {0x8, 0x7, 0x9, 0x6, 0xa, 0x5, 0xb, 0x4, 0xc, 0x3, 0xd, 0x2, 0xe, 0x1, 0xf};
 
-	/** circular list for upper nibble. */
+	/** circular list for the salt's hi nibble. */
 	const __u8 hir[15] = {0x0, 0x6, 0xf, 0x8, 0x7, 0x5, 0x3, 0x4, 0xc, 0xd, 0xe, 0x1, 0x2, 0xb, 0xa};
-	/** start offset for upper nibble mapping */
+
+	/** start offset for upper nibble mapping.
+	 * note: 9 is /special/. In the case where the high nibble == 0x9, hir[] is
+	 * not used and - coincidentally - the salt's hi nibble is 0x09 regardless
+	 * of the offset.
+	 */
 	const __u8 hio[16] = {0, 11, 12, 6, 7, 5, 1, 4, 3, 0x00, 14, 13, 8, 9, 10, 2};
 
 	/* the first byte is identical to itself */
