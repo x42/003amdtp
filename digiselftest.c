@@ -12,7 +12,7 @@
 static void hexdump(__u8 const * const data, const int nch, const char *annotation) {
 	int c;
 	printf("%10s: ", annotation);
-	for (c=0; c< nch; ++c) {
+	for (c = 0; c < nch; ++c) {
 		printf("%02x ", data[MAGIC_BYTE_OFF(c)]);
 	}
 	printf("\n");
@@ -21,7 +21,7 @@ static void hexdump(__u8 const * const data, const int nch, const char *annotati
 static void hexdump_x(__u8 const * const data, const int nch, const char *annotation) {
 	int c;
 	printf("%10s: ", annotation);
-	for (c=0; c< nch; ++c) {
+	for (c = 0; c < nch; ++c) {
 		printf("%02x ", data[c]);
 	}
 	printf("\n");
@@ -29,7 +29,7 @@ static void hexdump_x(__u8 const * const data, const int nch, const char *annota
 
 static int hexcmp(__u8 const * const d1, __u8 const * const expect, const int nch) {
 	int c;
-	for (c=0; c< nch; ++c) {
+	for (c = 0; c < nch; ++c) {
 		if (d1[MAGIC_BYTE_OFF(c)] != expect[c]) {
 			printf ("! test failed\n");
 			return 1;
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 	__u8 *snd = calloc(BYTE_PER_SAMPLE * nch, sizeof(__u8));
 
 	__u8 *pcm_quadlets = calloc(nch, sizeof(__u8));
-	for (i=0; i<nch; ++i) pcm_quadlets[i]=i;
+	for (i = 0; i < nch; ++i) pcm_quadlets[i] = i;
 
 	printf("# of channels: %d\n", 18);
 
@@ -67,28 +67,28 @@ int main(int argc, char **argv) {
 	err |= docheck(snd, cmp0, nch);
 
 	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
-	snd[MAGIC_BYTE_OFF(0)]=snd[MAGIC_BYTE_OFF(4)] = 0x14;
+	snd[MAGIC_BYTE_OFF(0)] = snd[MAGIC_BYTE_OFF(4)] = 0x14;
 	const __u8 cmp1[] = {0x14, 0x2c, 0xb3, 0xad, 0x16, 0x2a, 0xb5, 0xab, 0x04, 0x6c, 0xf3, 0x8d, 0x72, 0x5e, 0x31, 0x4f, 0x00, 0x00};
 	err |= docheck(snd, cmp1, nch);
 
 	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
-	snd[MAGIC_BYTE_OFF(0)]=snd[MAGIC_BYTE_OFF(6)] = 0x49;
+	snd[MAGIC_BYTE_OFF(0)] = snd[MAGIC_BYTE_OFF(6)] = 0x49;
 	const __u8 cmp2[] = {0x49, 0xc6, 0xda, 0xe5, 0x1b, 0x24, 0xf5, 0x8b, 0x74, 0x5c, 0x33, 0x4d, 0xc2, 0xde, 0xe1, 0x1f, 0x00, 0x00};
 	err |= docheck(snd, cmp2, nch);
 
 	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
-	snd[MAGIC_BYTE_OFF(0)]=snd[MAGIC_BYTE_OFF(6)] = 0xfd;
+	snd[MAGIC_BYTE_OFF(0)] = snd[MAGIC_BYTE_OFF(6)] = 0xfd;
 	const __u8 cmp3[] = {0xfd, 0x82, 0x7e, 0x51, 0x3f, 0x00, 0xfd, 0x82, 0x7e, 0x51, 0x3f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 	err |= docheck(snd, cmp3, nch);
 
 	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
-	snd[MAGIC_BYTE_OFF(0)]=snd[MAGIC_BYTE_OFF(6)] = 0x05;
+	snd[MAGIC_BYTE_OFF(0)] = snd[MAGIC_BYTE_OFF(6)] = 0x05;
 	const __u8 cmp4[] = {0x05, 0x6b, 0xf4, 0x8c, 0x73, 0x5d, 0x37, 0x49, 0xc6, 0xda, 0xe5, 0x1b, 0x24, 0xbc, 0xa3, 0x0d, 0x62, 0xfe};
 	err |= docheck(snd, cmp4, nch);
 
 	printf("2) QMAP encoder test:\n");
 	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
-	snd[MAGIC_BYTE_OFF(0)]=snd[MAGIC_BYTE_OFF(4)] = 0x85;
+	snd[MAGIC_BYTE_OFF(0)] = snd[MAGIC_BYTE_OFF(4)] = 0x85;
 	const __u8 cmp5[] = {0x85, 0x7b, 0x54, 0x3c, 0xc6, 0xda, 0xe5, 0x1b, 0x24, 0xbc, 0xa3, 0x0d, 0x62, 0xfe, 0x81, 0x7f, 0x00, 0x00};
 
 	hexdump(snd, nch, "input");
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 
 	printf("\n3) encode+decode test:\n");
 	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
-	snd[MAGIC_BYTE_OFF(0)]=snd[MAGIC_BYTE_OFF(6)] = 0x05;
+	snd[MAGIC_BYTE_OFF(0)] = snd[MAGIC_BYTE_OFF(6)] = 0x05;
 	const __u8 cmp6[] = {0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 	hexdump(snd, nch, "input");
@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
 
 	printf("\n4) QMAP encode+decode test:\n");
 	memset(snd, 0, BYTE_PER_SAMPLE * nch * sizeof(__u8));
-	snd[MAGIC_BYTE_OFF(0)]=snd[MAGIC_BYTE_OFF(9)] = 0xf9;
+	snd[MAGIC_BYTE_OFF(0)] = snd[MAGIC_BYTE_OFF(9)] = 0xf9;
 	const __u8 cmp7[] = {0xf9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 	hexdump(snd, nch, "input");

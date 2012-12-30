@@ -49,16 +49,16 @@ static const __u8 digiscrt(const __u8 idx, const unsigned int off) {
 	const __u8 hio[16] = {0, 11, 12, 6, 7, 5, 1, 4, 3, 0x00, 14, 13, 8, 9, 10, 2};
 
 #if 0 /* the current algorithm never calls digiscrt(.., 0) -- optimize away */
-	if (off==0) return idx; /* the first byte is identical to itself */
+	if (off == 0) return idx; /* the first byte is identical to itself */
 #endif
 
-	const __u8 ln = idx&0xf;
+	const __u8 ln = idx & 0xf;
 	if (len[ln] < off) return 0x00;
 
-	const __u8 hn = (idx>>4)&0xf;
-	const __u8 hr = (hn==0x9) ? 0x9 : hir[(hio[hn]+off)%15];
+	const __u8 hn = (idx >> 4) & 0xf;
+	const __u8 hr = (hn == 0x9) ? 0x9 : hir[ (hio[hn] + off) % 15 ];
 
-	return (nib[14 + off - len[ln]]) | (hr<<4);
+	return ( (nib[14 + off - len[ln]]) | (hr << 4) );
 }
 
 
@@ -68,13 +68,13 @@ void digi_encode(__u8 * const data, const int nch) {
 	int c;
 	DigiMagic state = {0x00, 0x00, 0};
 
-	for (c=0; c< nch; ++c) {
+	for (c = 0; c < nch; ++c) {
 		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
 			state.off = 0;
 			state.idx = data[MAGIC_BYTE_OFF(c)] ^ state.carry;
 		}
 		data[MAGIC_BYTE_OFF(c)] ^= state.carry;
-		state.carry=digiscrt(state.idx, ++(state.off));
+		state.carry = digiscrt(state.idx, ++(state.off));
 	}
 }
 
@@ -82,22 +82,22 @@ void digi_decode(__u8 * const data, const int nch) {
 	int c;
 	DigiMagic state = {0x00, 0x00, 0};
 
-	for (c=0; c< nch; ++c) {
+	for (c = 0; c < nch; ++c) {
 		data[MAGIC_BYTE_OFF(c)] ^= state.carry;
 		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
 			state.off = 0;
-			state.idx= data[MAGIC_BYTE_OFF(c)] ^ state.carry;
+			state.idx = data[MAGIC_BYTE_OFF(c)] ^ state.carry;
 		}
-		state.carry=digiscrt(state.idx, ++(state.off));
+		state.carry = digiscrt(state.idx, ++(state.off));
 	}
 }
 
 /*  ----- Iterative call API ----- */
 
 void digi_state_reset(DigiMagic *state) {
-	state->carry=0x00;
-	state->idx=0x00;
-	state->off=0;
+	state->carry = 0x00;
+	state->idx   = 0x00;
+	state->off   = 0;
 }
 
 void digi_encode_step(DigiMagic *state, __be32 * const buffer) {
@@ -108,7 +108,7 @@ void digi_encode_step(DigiMagic *state, __be32 * const buffer) {
 		state->idx = data[MAGIC_DIGI_BYTE] ^ state->carry;
 	}
 	data[MAGIC_DIGI_BYTE] ^= state->carry;
-	state->carry=digiscrt(state->idx, ++(state->off));
+	state->carry = digiscrt(state->idx, ++(state->off));
 }
 
 void digi_encode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
@@ -116,11 +116,10 @@ void digi_encode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) 
 	DigiMagic state;
 	digi_state_reset(&state);
 
-	for (c=0; c< nch; ++c) {
+	for (c = 0; c < nch; ++c) {
 		digi_encode_step(&state, &buffer[pcm_quadlets[c]]);
 	}
 }
-
 
 void digi_decode_step(DigiMagic *state, __be32 * const buffer) {
 	__u8 * const data = (__u8*) buffer;
@@ -128,9 +127,9 @@ void digi_decode_step(DigiMagic *state, __be32 * const buffer) {
 	data[MAGIC_DIGI_BYTE] ^= state->carry;
 	if (data[MAGIC_DIGI_BYTE] != 0x00) {
 		state->off = 0;
-		state->idx= data[MAGIC_DIGI_BYTE] ^ state->carry;
+		state->idx = data[MAGIC_DIGI_BYTE] ^ state->carry;
 	}
-	state->carry=digiscrt(state->idx, ++(state->off));
+	state->carry = digiscrt(state->idx, ++(state->off));
 }
 
 void digi_decode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
@@ -138,7 +137,7 @@ void digi_decode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) 
 	DigiMagic state;
 	digi_state_reset(&state);
 
-	for (c=0; c< nch; ++c) {
+	for (c = 0; c < nch; ++c) {
 		digi_decode_step(&state, &buffer[pcm_quadlets[c]]);
 	}
 }
