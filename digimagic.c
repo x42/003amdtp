@@ -21,7 +21,7 @@
 #define BYTE_PER_SAMPLE (4)
 #define MAGIC_DIGI_BYTE (2)
 
-#define MAGIC_BYTE_OFF(x) ( (x * BYTE_PER_SAMPLE) + MAGIC_DIGI_BYTE )
+#define MAGIC_BYTE_OFF(x) ( ( (x) * BYTE_PER_SAMPLE ) + MAGIC_DIGI_BYTE )
 
 /** digi look up table
  *
