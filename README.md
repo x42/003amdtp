@@ -38,7 +38,7 @@ static void amdtp_write_samples(struct amdtp_stream *s,
   remaining_frames = runtime->buffer_size - s->pcm_buffer_pointer;
   frame_step = s->data_block_quadlets;
 #ifdef EXAMPLE1
-  DigiMagic state;
+  DigiMagic digistate;
 #endif
 
   for (i = 0; i < frames; ++i) {
@@ -49,7 +49,7 @@ static void amdtp_write_samples(struct amdtp_stream *s,
       buffer[s->pcm_quadlets[c]] =
           cpu_to_be32((*src >> 8) | 0x40000000);
 #ifdef EXAMPLE1
-      digi_encode_step(&state, &buffer[s->pcm_quadlets[c]]); ///< hook to 003amdtp
+      digi_encode_step(&digistate, &buffer[s->pcm_quadlets[c]]); ///< hook to 003amdtp
 #endif
       src++;
     }
