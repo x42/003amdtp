@@ -1,5 +1,5 @@
 doubleOhThree - amdtp
----------------------
+=====================
 
 Reverse engineered AMDTP ISO stream en/decoding for the Digidesign(TM) 003R.
 
@@ -20,6 +20,15 @@ of Linux is currently being worked on.
 The code has been tested to work with 003R (rack mount). It is currently
 unknown if the same mechanism is used for other Digidesign devices.
 
+003amdtp is licensed in terms of the GNU General Public License Version 2 or later.
+
+
+Further information regarding the protocol can be found at (http://gareus.org/wiki/digi003).
+Driver development is taking place at (https://github.com/zamaudio/snd-firewire-003).
+
+
+Example Usage
+-------------
 
 Excerpt from `sound/firewire/amdtp.c`:
 
@@ -64,5 +73,3 @@ static void amdtp_write_samples(struct amdtp_stream *s,
   }
 }
 ```
-
-003amdtp is licensed in terms of the GNU General Public License Version 2 or later.
