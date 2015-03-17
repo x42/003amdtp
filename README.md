@@ -17,8 +17,10 @@ The goal of this project is to provide a free/libre software solution to the
 encoding used by the Digidesign(TM) 003R. Integration into the ALSA subsystem
 of Linux is currently being worked on.
 
-The code has been tested to work with 003R (rack mount). It is currently
-unknown if the same mechanism is used for other Digidesign devices.
+The code has been tested to work with 003R (rack mount) and should work
+with the 002 and 003 as well. Note that the devices only encode the 
+playback (output). The `digi_decode` function is provided for self-test
+and academic purposes only.
 
 003amdtp is licensed in terms of the GNU General Public License Version 2 or later.
 
@@ -46,7 +48,7 @@ static void amdtp_write_samples(struct amdtp_stream *s,
       s->pcm_buffer_pointer * (runtime->frame_bits / 8);
   remaining_frames = runtime->buffer_size - s->pcm_buffer_pointer;
   frame_step = s->data_block_quadlets;
-#ifdef EXAMPLE1
+#ifdef EXAMPLE
   // NB. this should not be static (multiple devices)
   // and also re-initialzed on open/close or stream-restart.
   // use digi_state_reset(&state);
@@ -57,8 +59,8 @@ static void amdtp_write_samples(struct amdtp_stream *s,
     for (c = 0; c < channels; ++c) {
       buffer[s->pcm_quadlets[c]] =
           cpu_to_be32((*src >> 8) | 0x40000000);
-#ifdef EXAMPLE1
-      digi_encode_step(&digistate, &buffer[s->pcm_quadlets[c]]); ///< hook to 003amdtp
+#ifdef EXAMPLE
+      digi_encode_step(&digistate, &buffer[s->pcm_quadlets[c]]);
 #endif
       src++;
     }
