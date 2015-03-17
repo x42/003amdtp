@@ -18,10 +18,8 @@
 
 #include "digimagic.h"
 
-#define BYTE_PER_SAMPLE (4)
 #define MAGIC_DIGI_BYTE (2)
 
-#define MAGIC_BYTE_OFF(x) ( ( (x) * BYTE_PER_SAMPLE ) + MAGIC_DIGI_BYTE )
 
 /** digi look up table
  *
@@ -61,39 +59,6 @@ static const __u8 digiscrt(const __u8 idx, const unsigned int off) {
 	return ( (nib[14 + off - len[ln]]) | (hr << 4) );
 }
 
-
-/*  ----- SIMPLE API ----- */
-
-void digi_encode(__u8 * const data, const int nch) {
-	int c;
-	DigiMagic state = {0x00, 0x00, 0};
-
-	for (c = 0; c < nch; ++c) {
-		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
-			state.off = 0;
-			state.idx = data[MAGIC_BYTE_OFF(c)] ^ state.carry;
-		}
-		data[MAGIC_BYTE_OFF(c)] ^= state.carry;
-		state.carry = digiscrt(state.idx, ++(state.off));
-	}
-}
-
-void digi_decode(__u8 * const data, const int nch) {
-	int c;
-	DigiMagic state = {0x00, 0x00, 0};
-
-	for (c = 0; c < nch; ++c) {
-		data[MAGIC_BYTE_OFF(c)] ^= state.carry;
-		if (data[MAGIC_BYTE_OFF(c)] != 0x00) {
-			state.off = 0;
-			state.idx = data[MAGIC_BYTE_OFF(c)] ^ state.carry;
-		}
-		state.carry = digiscrt(state.idx, ++(state.off));
-	}
-}
-
-/*  ----- Iterative call API ----- */
-
 void digi_state_reset(DigiMagic *state) {
 	state->carry = 0x00;
 	state->idx   = 0x00;
@@ -108,16 +73,8 @@ void digi_encode_step(DigiMagic *state, __be32 * const buffer) {
 		state->idx = data[MAGIC_DIGI_BYTE] ^ state->carry;
 	}
 	data[MAGIC_DIGI_BYTE] ^= state->carry;
-	state->carry = digiscrt(state->idx, ++(state->off));
-}
-
-void digi_encode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
-	int c;
-	DigiMagic state;
-	digi_state_reset(&state);
-
-	for (c = 0; c < nch; ++c) {
-		digi_encode_step(&state, &buffer[pcm_quadlets[c]]);
+	if (state->off < 15) { // max len is 14; carry for off == 15 is 0x00
+		state->carry = digiscrt(state->idx, ++(state->off));
 	}
 }
 
@@ -129,15 +86,7 @@ void digi_decode_step(DigiMagic *state, __be32 * const buffer) {
 		state->off = 0;
 		state->idx = data[MAGIC_DIGI_BYTE] ^ state->carry;
 	}
-	state->carry = digiscrt(state->idx, ++(state->off));
-}
-
-void digi_decode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
-	int c;
-	DigiMagic state;
-	digi_state_reset(&state);
-
-	for (c = 0; c < nch; ++c) {
-		digi_decode_step(&state, &buffer[pcm_quadlets[c]]);
+	if (state->off < 15) { // max len is 14; carry for off == 15 is 0x00
+		state->carry = digiscrt(state->idx, ++(state->off));
 	}
 }

@@ -38,6 +38,54 @@ static int hexcmp(__u8 const * const d1, __u8 const * const expect, const int nc
 	return 0;
 }
 
+/*  ----- OLD SIMPLE API ----- */
+
+/* this is unsuitable for continuous en/de coding. since it does not retain state.  */
+
+#define BYTE_PER_SAMPLE (4)
+#define MAGIC_BYTE_OFF(x) ( ( (x) * BYTE_PER_SAMPLE ) + MAGIC_DIGI_BYTE )
+
+static void digi_encode(__u8 * const data, const int nch) {
+	int c;
+	DigiMagic state;
+	digi_state_reset(&state);
+
+	for (c = 0; c < nch; ++c) {
+		digi_encode_step(&state, (__be32*) &data[c * BYTE_PER_SAMPLE]);
+	}
+}
+
+static void digi_decode(__u8 * const data, const int nch) {
+	int c;
+	DigiMagic state;
+	digi_state_reset(&state);
+
+	for (c = 0; c < nch; ++c) {
+		digi_decode_step(&state, (__be32*) &data[c * BYTE_PER_SAMPLE]);
+	}
+}
+
+static void digi_encode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
+	int c;
+	DigiMagic state;
+	digi_state_reset(&state);
+
+	for (c = 0; c < nch; ++c) {
+		digi_encode_step(&state, &buffer[pcm_quadlets[c]]);
+	}
+}
+
+
+static void digi_decode_qmap(__be32 * const buffer, __u8 *pcm_quadlets, const int nch) {
+	int c;
+	DigiMagic state;
+	digi_state_reset(&state);
+
+	for (c = 0; c < nch; ++c) {
+		digi_decode_step(&state, &buffer[pcm_quadlets[c]]);
+	}
+}
+
 static int docheck (__u8 * const data, __u8 const * const expect, const int nch) {
 	int rv;
 	hexdump(data, nch, "input");

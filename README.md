@@ -47,13 +47,13 @@ static void amdtp_write_samples(struct amdtp_stream *s,
   remaining_frames = runtime->buffer_size - s->pcm_buffer_pointer;
   frame_step = s->data_block_quadlets;
 #ifdef EXAMPLE1
-  DigiMagic digistate;
+  // NB. this should not be static (multiple devices)
+  // and also re-initialzed on open/close or stream-restart.
+  // use digi_state_reset(&state);
+  static DigiMagic digistate = {0x00, 0x00, 0};
 #endif
 
   for (i = 0; i < frames; ++i) {
-#ifdef EXAMPLE1
-    digi_state_reset(&digistate);
-#endif
     for (c = 0; c < channels; ++c) {
       buffer[s->pcm_quadlets[c]] =
           cpu_to_be32((*src >> 8) | 0x40000000);
@@ -62,10 +62,6 @@ static void amdtp_write_samples(struct amdtp_stream *s,
 #endif
       src++;
     }
-
-#ifdef EXAMPLE2
-    digi_encode(&buffer[s->pcm_quadlets[0]], channels); ///< hook to 003amdtp
-#endif
 
     buffer += frame_step;
     if (--remaining_frames == 0)
